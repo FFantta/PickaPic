@@ -9,9 +9,13 @@ import SwiftUI
 
 @main
 struct PickaPicApp: App {
+    // 添加环境对象来管理照片数据
+    @StateObject private var photoManager = PhotoManager()
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(photoManager)
         }
     }
 }
