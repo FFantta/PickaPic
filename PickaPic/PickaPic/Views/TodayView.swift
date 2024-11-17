@@ -19,7 +19,7 @@ struct TodayView: View {
                             .frame(height: 400)
                             .shadow(color: .gray.opacity(0.2), radius: 10, x: 0, y: 5)
                         
-                        if let image = selectedImage {
+                        if let image = selectedImage ?? photoManager.todayPhoto?.image {
                             Image(uiImage: image)
                                 .resizable()
                                 .scaledToFill()
@@ -50,6 +50,11 @@ struct TodayView: View {
                             .background(Color(uiColor: .systemGray6))
                             .cornerRadius(15)
                             .focused($isTextFieldFocused)
+                            .onAppear {
+                                if let todayPhoto = photoManager.todayPhoto {
+                                    description = todayPhoto.description
+                                }
+                            }
                     }
                     .padding(.horizontal)
                     
@@ -65,7 +70,7 @@ struct TodayView: View {
                                 HStack {
                                     Image(systemName: "camera.fill")
                                         .font(.headline)
-                                    Text("拍照")
+                                    Text(photoManager.hasTodayPhoto ? "重新拍照" : "拍照")
                                         .font(.headline)
                                 }
                                 .frame(maxWidth: .infinity)
@@ -84,7 +89,7 @@ struct TodayView: View {
                                 HStack {
                                     Image(systemName: "photo.fill")
                                         .font(.headline)
-                                    Text("相册")
+                                    Text(photoManager.hasTodayPhoto ? "重新选择" : "相册")
                                         .font(.headline)
                                 }
                                 .frame(maxWidth: .infinity)
@@ -106,7 +111,7 @@ struct TodayView: View {
                                 HStack {
                                     Image(systemName: "square.and.arrow.down.fill")
                                         .font(.headline)
-                                    Text("保存今日照片")
+                                    Text(photoManager.hasTodayPhoto ? "更新今日照片" : "保存今日照片")
                                         .font(.headline)
                                 }
                                 .frame(maxWidth: .infinity)
@@ -148,7 +153,6 @@ struct TodayView: View {
         guard let image = selectedImage else { return }
         photoManager.addPhoto(image, description: description)
         selectedImage = nil
-        description = ""
     }
 }
 
