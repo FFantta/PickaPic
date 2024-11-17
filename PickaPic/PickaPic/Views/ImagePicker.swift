@@ -7,6 +7,27 @@ struct ImagePicker: UIViewControllerRepresentable {
     let sourceType: UIImagePickerController.SourceType
     @Environment(\.presentationMode) var presentationMode
     
+    class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+        let parent: ImagePicker
+        
+        init(_ parent: ImagePicker) {
+            self.parent = parent
+        }
+        
+        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+            if let image = info[.originalImage] as? UIImage {
+                // 处理图片方向
+                let fixedImage = image.fixOrientation()
+                parent.image = fixedImage
+            }
+            parent.presentationMode.wrappedValue.dismiss()
+        }
+        
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            parent.presentationMode.wrappedValue.dismiss()
+        }
+    }
+    
     func makeUIViewController(context: Context) -> UIImagePickerController {
         let picker = UIImagePickerController()
         
@@ -17,7 +38,6 @@ struct ImagePicker: UIViewControllerRepresentable {
         
         // 相机特定设置
         if sourceType == .camera {
-            // 确保设备支持相机
             guard UIImagePickerController.isSourceTypeAvailable(.camera) else {
                 print("相机不可用")
                 return picker
@@ -35,13 +55,6 @@ struct ImagePicker: UIViewControllerRepresentable {
             }
         }
         
-        // 权限检查
-        if sourceType == .photoLibrary {
-            checkPhotoLibraryPermission()
-        } else if sourceType == .camera {
-            checkCameraPermission()
-        }
-        
         return picker
     }
     
@@ -50,37 +63,18 @@ struct ImagePicker: UIViewControllerRepresentable {
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
     }
-    
-    private func checkPhotoLibraryPermission() {
-        let status = PHPhotoLibrary.authorizationStatus()
-        if status == .notDetermined {
-            PHPhotoLibrary.requestAuthorization { _ in }
-        }
-    }
-    
-    private func checkCameraPermission() {
-        let status = AVCaptureDevice.authorizationStatus(for: .video)
-        if status == .notDetermined {
-            AVCaptureDevice.requestAccess(for: .video) { _ in }
-        }
-    }
-    
-    class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
-        let parent: ImagePicker
+}
+
+// 添加 UIImage 扩展来处理图片方向
+extension UIImage {
+    func fixOrientation() -> UIImage {
+        if imageOrientation == .up { return self }
         
-        init(_ parent: ImagePicker) {
-            self.parent = parent
-        }
+        UIGraphicsBeginImageContextWithOptions(size, false, scale)
+        draw(in: CGRect(origin: .zero, size: size))
+        let normalizedImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
         
-        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
-            if let image = info[.originalImage] as? UIImage {
-                parent.image = image
-            }
-            parent.presentationMode.wrappedValue.dismiss()
-        }
-        
-        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-            parent.presentationMode.wrappedValue.dismiss()
-        }
+        return normalizedImage ?? self
     }
 } 

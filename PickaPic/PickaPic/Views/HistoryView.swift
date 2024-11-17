@@ -229,11 +229,13 @@ struct PhotoDetailOverlay: View {
                     .padding(.horizontal)
                 
                 // 描述和日期
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(spacing: 12) {
                     if !photo.description.isEmpty {
                         Text(photo.description)
                             .font(.body)
                             .foregroundColor(.primary)
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity)
                     }
                     
                     Text(photo.date.formatted(date: .complete, time: .shortened))

@@ -14,17 +14,18 @@ struct TodayView: View {
                 VStack(spacing: 25) {
                     // 照片显示区域
                     ZStack {
+                        // 白色背景卡片
                         RoundedRectangle(cornerRadius: 20)
-                            .fill(Color(uiColor: .systemGray6))
-                            .frame(height: 400)
-                            .shadow(color: .gray.opacity(0.2), radius: 10, x: 0, y: 5)
+                            .fill(Color.white)
+                            .shadow(color: .gray.opacity(0.2), radius: 10)
+                            .frame(width: UIScreen.main.bounds.width - 40, height: UIScreen.main.bounds.width - 40)
                         
                         if let image = selectedImage ?? photoManager.todayPhoto?.image {
                             Image(uiImage: image)
                                 .resizable()
                                 .scaledToFill()
-                                .frame(height: 400)
-                                .clipShape(RoundedRectangle(cornerRadius: 20))
+                                .frame(width: UIScreen.main.bounds.width - 60, height: UIScreen.main.bounds.width - 60)
+                                .clipShape(RoundedRectangle(cornerRadius: 15))
                         } else {
                             VStack(spacing: 15) {
                                 Image(systemName: "camera.fill")
@@ -34,9 +35,10 @@ struct TodayView: View {
                                     .font(.headline)
                                     .foregroundColor(.gray)
                             }
+                            .frame(width: UIScreen.main.bounds.width - 60, height: UIScreen.main.bounds.width - 60)
                         }
                     }
-                    .padding(.horizontal)
+                    .padding(.top, 20)
                     
                     // 描述输入区域
                     VStack(alignment: .leading, spacing: 8) {
@@ -50,9 +52,11 @@ struct TodayView: View {
                             .background(Color(uiColor: .systemGray6))
                             .cornerRadius(15)
                             .focused($isTextFieldFocused)
-                            .onAppear {
-                                if let todayPhoto = photoManager.todayPhoto {
-                                    description = todayPhoto.description
+                            .submitLabel(.done)
+                            .onSubmit {
+                                isTextFieldFocused = false
+                                if let image = selectedImage ?? photoManager.todayPhoto?.image {
+                                    photoManager.addPhoto(image, description: description)
                                 }
                             }
                     }
@@ -131,7 +135,7 @@ struct TodayView: View {
                         }
                     }
                 }
-                .padding(.vertical)
+                .padding(.bottom)
             }
             .background(Color(uiColor: .systemBackground))
             .onTapGesture {
@@ -145,6 +149,11 @@ struct TodayView: View {
             .fullScreenCover(isPresented: $showImagePicker) {
                 ImagePicker(image: $selectedImage, sourceType: .photoLibrary)
                     .edgesIgnoringSafeArea(.all)
+            }
+        }
+        .onAppear {
+            if let todayPhoto = photoManager.todayPhoto {
+                description = todayPhoto.description
             }
         }
     }
