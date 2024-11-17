@@ -6,6 +6,7 @@ struct HistoryView: View {
     @State private var selectedPhoto: DailyPhoto?
     @State private var isShowingDetail = false
     @State private var selectedCell: UUID?
+    @State private var isExporting = false
     @Namespace private var animation
     
     private let calendar = Calendar.current
@@ -93,8 +94,19 @@ struct HistoryView: View {
                     }
                 }
             }
-            .navigationTitle("照片记录")
+            .navigationTitle("时光记录")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: exportCurrentMonthPhotos) {
+                        Image(systemName: "square.and.arrow.up")
+                            .foregroundColor(.blue)
+                    }
+                }
+            }
+            .sheet(isPresented: $isExporting) {
+                ShareSheet(items: prepareExportItems())
+            }
             .onDisappear {
                 isShowingDetail = false
                 selectedPhoto = nil
@@ -141,6 +153,57 @@ struct HistoryView: View {
         days += Array(repeating: nil as Date?, count: remainingCells)
         
         return days
+    }
+    
+    private func prepareExportItems() -> [Any] {
+        let currentMonthPhotos = photoManager.dailyPhotos.filter { photo in
+            calendar.isDate(photo.date, equalTo: selectedDate, toGranularity: .month)
+        }.sorted { $0.date < $1.date }
+        
+        var exportItems: [Any] = []
+        
+        // 创建一个临时目录
+        let tempDir = FileManager.default.temporaryDirectory
+        let exportDir = tempDir.appendingPathComponent(UUID().uuidString)
+        try? FileManager.default.createDirectory(at: exportDir, withIntermediateDirectories: true)
+        
+        // 保存照片和描述
+        for (index, photo) in currentMonthPhotos.enumerated() {
+            // 保存照片
+            if let imageData = photo.image.jpegData(compressionQuality: 1.0) {
+                let imageFile = exportDir.appendingPathComponent("\(index + 1).jpg")
+                try? imageData.write(to: imageFile)
+                exportItems.append(imageFile)
+            }
+            
+            // 创建描述文本
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateStyle = .medium
+            dateFormatter.timeStyle = .short
+            let description = """
+            日期：\(dateFormatter.string(from: photo.date))
+            描述：\(photo.description)
+            
+            """
+            
+            // 将描述添加到文本文件
+            if index == 0 {
+                let textFile = exportDir.appendingPathComponent("描述.txt")
+                try? description.write(to: textFile, atomically: true, encoding: .utf8)
+                exportItems.append(textFile)
+            } else {
+                if let textFileURL = exportItems.last as? URL,
+                   let existingText = try? String(contentsOf: textFileURL, encoding: .utf8) {
+                    try? (existingText + description).write(to: textFileURL, atomically: true, encoding: .utf8)
+                }
+            }
+        }
+        
+        return exportItems
+    }
+    
+    private func exportCurrentMonthPhotos() {
+        isExporting = true
     }
 }
 
@@ -197,14 +260,25 @@ struct PhotoDetailOverlay: View {
     let photo: DailyPhoto
     @Binding var isShowing: Bool
     let namespace: Namespace.ID
+    @EnvironmentObject var photoManager: PhotoManager
+    @State private var offset = CGSize.zero
+    @State private var currentPhoto: DailyPhoto
+    @State private var opacity: Double = 1.0
+    @State private var nextPhoto: DailyPhoto?
+    
+    init(photo: DailyPhoto, isShowing: Binding<Bool>, namespace: Namespace.ID) {
+        self.photo = photo
+        self._isShowing = isShowing
+        self.namespace = namespace
+        self._currentPhoto = State(initialValue: photo)
+    }
     
     var body: some View {
         ZStack {
-            // 背景
             Color.white
                 .ignoresSafeArea()
             
-            VStack(spacing: 20) {
+            VStack {
                 // 顶部导航栏
                 HStack {
                     Button(action: {
@@ -212,41 +286,168 @@ struct PhotoDetailOverlay: View {
                             isShowing = false
                         }
                     }) {
-                        Image(systemName: "chevron.left")
-                            .font(.title2)
-                            .foregroundColor(.black)
+                        HStack(spacing: 4) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 18, weight: .medium))
+                            Text("返回")
+                                .font(.system(size: 17))
+                        }
+                        .foregroundColor(.blue)
                     }
                     Spacer()
                 }
                 .padding(.horizontal)
+                .padding(.top, 10)
                 
-                // 照片
-                Image(uiImage: photo.image)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(maxWidth: .infinity)
-                    .cornerRadius(12)
-                    .padding(.horizontal)
-                
-                // 描述和日期
-                VStack(spacing: 12) {
-                    if !photo.description.isEmpty {
-                        Text(photo.description)
-                            .font(.body)
-                            .foregroundColor(.primary)
-                            .multilineTextAlignment(.center)
-                            .frame(maxWidth: .infinity)
+                // 主要内容区域
+                GeometryReader { geometry in
+                    VStack {
+                        Spacer()
+                        
+                        // 照片区域
+                        ZStack {
+                            // 当前照片
+                            Image(uiImage: currentPhoto.image)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(maxWidth: geometry.size.width - 32)
+                                .cornerRadius(15)
+                                .opacity(opacity)
+                                .padding(.horizontal, 16)
+                            
+                            // 下一张照片
+                            if let next = nextPhoto {
+                                Image(uiImage: next.image)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(maxWidth: geometry.size.width - 32)
+                                    .cornerRadius(15)
+                                    .padding(.horizontal, 16)
+                                    .offset(x: offset.width < 0 ? geometry.size.width : -geometry.size.width)
+                                    .offset(x: offset.width)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                        .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 2)
+                        .gesture(
+                            DragGesture()
+                                .onChanged { value in
+                                    offset = value.translation
+                                    // 根据滑动方向预加载下一张照片
+                                    if value.translation.width > 0 {
+                                        nextPhoto = getPreviousPhoto()
+                                    } else if value.translation.width < 0 {
+                                        nextPhoto = getNextPhoto()
+                                    }
+                                    // 调整当前照片的透明度
+                                    let progress = abs(value.translation.width) / 200.0
+                                    opacity = 1.0 - min(progress, 1.0)
+                                }
+                                .onEnded { value in
+                                    let threshold: CGFloat = 50
+                                    
+                                    if abs(value.translation.width) > threshold {
+                                        if value.translation.width > 0 {
+                                            // 向右滑动，显示前一天
+                                            if let previousPhoto = getPreviousPhoto() {
+                                                withAnimation(.easeInOut(duration: 0.3)) {
+                                                    offset.width = geometry.size.width
+                                                    opacity = 0
+                                                }
+                                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                                                    currentPhoto = previousPhoto
+                                                    offset = .zero
+                                                    opacity = 1
+                                                    nextPhoto = nil
+                                                }
+                                            } else {
+                                                withAnimation(.easeInOut(duration: 0.3)) {
+                                                    offset = .zero
+                                                    opacity = 1
+                                                }
+                                            }
+                                        } else {
+                                            // 向左滑动，显示后一天
+                                            if let nextPhoto = getNextPhoto() {
+                                                withAnimation(.easeInOut(duration: 0.3)) {
+                                                    offset.width = -geometry.size.width
+                                                    opacity = 0
+                                                }
+                                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                                                    currentPhoto = nextPhoto
+                                                    offset = .zero
+                                                    opacity = 1
+                                                    self.nextPhoto = nil
+                                                }
+                                            } else {
+                                                withAnimation(.easeInOut(duration: 0.3)) {
+                                                    offset = .zero
+                                                    opacity = 1
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        withAnimation(.easeInOut(duration: 0.3)) {
+                                            offset = .zero
+                                            opacity = 1
+                                            nextPhoto = nil
+                                        }
+                                    }
+                                }
+                        )
+                        
+                        Spacer()
+                        
+                        // 描述和日期
+                        VStack(spacing: 16) {
+                            if !currentPhoto.description.isEmpty {
+                                Text(currentPhoto.description)
+                                    .font(.body)
+                                    .foregroundColor(.primary)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal)
+                            }
+                            
+                            Text(currentPhoto.date.formatted(date: .complete, time: .shortened))
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.bottom, 30)
                     }
-                    
-                    Text(photo.date.formatted(date: .complete, time: .shortened))
-                        .font(.caption)
-                        .foregroundColor(.secondary)
                 }
-                .padding(.horizontal)
-                
-                Spacer()
             }
-            .padding(.top, 44)
         }
     }
+    
+    // 获取前一天的照片
+    private func getPreviousPhoto() -> DailyPhoto? {
+        let sortedPhotos = photoManager.dailyPhotos.sorted { $0.date > $1.date }
+        if let index = sortedPhotos.firstIndex(where: { $0.id == currentPhoto.id }),
+           index < sortedPhotos.count - 1 {
+            return sortedPhotos[index + 1]
+        }
+        return nil
+    }
+    
+    // 获取后一天的照片
+    private func getNextPhoto() -> DailyPhoto? {
+        let sortedPhotos = photoManager.dailyPhotos.sorted { $0.date > $1.date }
+        if let index = sortedPhotos.firstIndex(where: { $0.id == currentPhoto.id }),
+           index > 0 {
+            return sortedPhotos[index - 1]
+        }
+        return nil
+    }
+}
+
+// 添加分享sheet
+struct ShareSheet: UIViewControllerRepresentable {
+    let items: [Any]
+    
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        let controller = UIActivityViewController(activityItems: items, applicationActivities: nil)
+        return controller
+    }
+    
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 } 
