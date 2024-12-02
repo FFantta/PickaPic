@@ -60,7 +60,7 @@ struct HistoryView: View {
                                 if let photo = photoManager.getPhoto(for: date) {
                                     DayCell(date: date, photo: photo, isSelected: selectedCell == photo.id)
                                         .id(photo.id)
-                                        .matchedGeometryEffect(id: photo.id, in: animation, isSource: !isShowingDetail)
+                                        .animation(.spring(response: 0.5, dampingFraction: 0.7), value: isShowingDetail)
                                         .onTapGesture {
                                             selectedCell = photo.id
                                             selectedPhoto = photo

@@ -42,7 +42,7 @@ struct TodayView: View {
                     
                     // 描述输入区域
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("今日心情")
+                        Text("今日状态")
                             .font(.subheadline)
                             .foregroundColor(.gray)
                             .padding(.leading)
@@ -141,7 +141,7 @@ struct TodayView: View {
             .onTapGesture {
                 isTextFieldFocused = false
             }
-            .navigationTitle("今日一拍")
+            .navigationTitle("Pick a Pic")
             .fullScreenCover(isPresented: $showCamera) {
                 ImagePicker(image: $selectedImage, sourceType: .camera)
                     .edgesIgnoringSafeArea(.all)

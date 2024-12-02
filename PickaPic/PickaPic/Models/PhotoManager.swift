@@ -105,7 +105,7 @@ class PhotoManager: ObservableObject {
                     
                     let request = PHAssetCollectionChangeRequest(for: album)
                     let assets = PHAsset.fetchAssets(withLocalIdentifiers: [assetLocalIdentifier], options: nil)
-                    request?.addAssets(assets as! NSFastEnumeration)
+                    request?.addAssets(assets as NSFastEnumeration)
                 }) { success, error in
                     if let error = error {
                         print("保存照片到相册失败: \(error.localizedDescription)")
