@@ -36,6 +36,8 @@ struct TodayView: View {
                                     .foregroundColor(.gray)
                             }
                             .frame(width: UIScreen.main.bounds.width - 60, height: UIScreen.main.bounds.width - 60)
+                            .background(Color(red: 224/255, green: 237/255, blue: 255/255))
+                            .cornerRadius(15)
                         }
                     }
                     .padding(.top, 20)
@@ -44,13 +46,15 @@ struct TodayView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("今日状态")
                             .font(.subheadline)
-                            .foregroundColor(.gray)
+                            .fontWeight(.bold)
+                            .foregroundColor(Color(red: 100/255, green: 90/255, blue: 230/255))
                             .padding(.leading)
                         
                         TextField("写下此刻的想法...", text: $description)
                             .padding()
-                            .background(Color(uiColor: .systemGray6))
-                            .cornerRadius(15)
+                            .background(Color(red: 224/255, green: 237/255, blue: 255/255))
+                            .cornerRadius(8)
+                            .foregroundColor(.black)
                             .focused($isTextFieldFocused)
                             .submitLabel(.done)
                             .onSubmit {
