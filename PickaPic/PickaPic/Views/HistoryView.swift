@@ -16,7 +16,7 @@ struct HistoryView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                Color(uiColor: .systemBackground)
+                Color(red: 255/255, green: 242/255, blue: 223/255)
                     .ignoresSafeArea()
                 
                 VStack(spacing: 20) {
@@ -225,11 +225,9 @@ struct DayCell: View {
             
             // 日期标签
             Text("\(calendar.component(.day, from: date))")
-                .font(.system(size: 10, weight: .medium))
+                .font(.system(size: 10, weight: .bold))
                 .foregroundColor(.white)
                 .padding(2)
-                .background(Color.black.opacity(0.3))
-                .clipShape(RoundedRectangle(cornerRadius: 4))
                 .padding(2)
         }
         .scaleEffect(isSelected ? 0.95 : 1)
@@ -245,12 +243,12 @@ struct EmptyDayCell: View {
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 8)
-                .fill(isToday ? Color.blue.opacity(0.1) : Color(uiColor: .secondarySystemBackground))
+                .fill(isToday ? Color(red: 255/255, green: 179/255, blue: 179/255) : Color(red: 255/255, green: 230/255, blue: 204/255))
                 .frame(width: UIScreen.main.bounds.width / 7 - 4, height: UIScreen.main.bounds.width / 7 - 4)
             
             Text("\(calendar.component(.day, from: date))")
-                .font(.system(size: 12, weight: isToday ? .bold : .regular))
-                .foregroundColor(isToday ? .blue : .secondary)
+                .font(.system(size: 12, weight: .bold))
+                .foregroundColor(Color.gray)
         }
     }
 }

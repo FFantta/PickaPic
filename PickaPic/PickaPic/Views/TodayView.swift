@@ -137,7 +137,7 @@ struct TodayView: View {
                 }
                 .padding(.bottom)
             }
-            .background(Color(uiColor: .systemBackground))
+            .background(Color(red: 255/255, green: 242/255, blue: 223/255))
             .onTapGesture {
                 isTextFieldFocused = false
             }
