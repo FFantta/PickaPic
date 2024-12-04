@@ -286,11 +286,11 @@ struct PhotoDetailOverlay: View {
                     }) {
                         HStack(spacing: 4) {
                             Image(systemName: "chevron.left")
-                                .font(.system(size: 18, weight: .medium))
+                                .font(.system(size: 18, weight: .bold))
                             Text("返回")
-                                .font(.system(size: 17))
+                                .font(.system(size: 17, weight: .bold))
                         }
-                        .foregroundColor(.blue)
+                        .foregroundColor(.black)
                     }
                     Spacer()
                 }
