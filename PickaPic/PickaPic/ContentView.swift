@@ -12,12 +12,24 @@ struct ContentView: View {
         TabView {
             TodayView()
                 .tabItem {
-                    Label("今日", systemImage: "camera")
+                    VStack {
+                        Image("bottom1_d")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 10, height: 10)
+                        // Text("今日")
+                    }
                 }
             
             HistoryView()
                 .tabItem {
-                    Label("记录", systemImage: "photo.on.rectangle")
+                    VStack {
+                        Image("bottom2_d")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 10, height: 10)
+                        // Text("记录")
+                    }
                 }
         }
     }
