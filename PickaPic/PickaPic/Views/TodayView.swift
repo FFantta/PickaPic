@@ -155,6 +155,7 @@ struct TodayView: View {
                     .edgesIgnoringSafeArea(.all)
             }
         }
+        .preferredColorScheme(.light)
         .onAppear {
             if let todayPhoto = photoManager.todayPhoto {
                 description = todayPhoto.description

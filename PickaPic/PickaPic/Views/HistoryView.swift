@@ -113,6 +113,7 @@ struct HistoryView: View {
                 selectedCell = nil
             }
         }
+        .preferredColorScheme(.light)
     }
     
     private func monthYearString(from date: Date) -> String {
