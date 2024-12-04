@@ -59,8 +59,9 @@ struct TodayView: View {
                             .submitLabel(.done)
                             .onSubmit {
                                 isTextFieldFocused = false
-                                if let image = selectedImage ?? photoManager.todayPhoto?.image {
+                                if let image = selectedImage {
                                     photoManager.addPhoto(image, description: description)
+                                    selectedImage = nil
                                 }
                             }
                     }
@@ -112,31 +113,6 @@ struct TodayView: View {
                             }
                         }
                         .padding(.horizontal)
-                        
-                        // 保存按钮
-                        if selectedImage != nil {
-                            Button(action: savePhoto) {
-                                HStack {
-                                    Image(systemName: "square.and.arrow.down.fill")
-                                        .font(.headline)
-                                    Text(photoManager.hasTodayPhoto ? "更新今日照片" : "保存今日照片")
-                                        .font(.headline)
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 15)
-                                .background(
-                                    LinearGradient(
-                                        gradient: Gradient(colors: [.blue, .purple]),
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
-                                )
-                                .foregroundColor(.white)
-                                .cornerRadius(15)
-                            }
-                            .padding(.horizontal)
-                            .shadow(color: .blue.opacity(0.3), radius: 5, x: 0, y: 3)
-                        }
                     }
                 }
                 .padding(.bottom)
@@ -149,10 +125,22 @@ struct TodayView: View {
             .fullScreenCover(isPresented: $showCamera) {
                 ImagePicker(image: $selectedImage, sourceType: .camera)
                     .edgesIgnoringSafeArea(.all)
+                    .onDisappear {
+                        if let image = selectedImage {
+                            photoManager.addPhoto(image, description: description)
+                            selectedImage = nil
+                        }
+                    }
             }
             .fullScreenCover(isPresented: $showImagePicker) {
                 ImagePicker(image: $selectedImage, sourceType: .photoLibrary)
                     .edgesIgnoringSafeArea(.all)
+                    .onDisappear {
+                        if let image = selectedImage {
+                            photoManager.addPhoto(image, description: description)
+                            selectedImage = nil
+                        }
+                    }
             }
             .preferredColorScheme(.light)
         }
@@ -162,12 +150,6 @@ struct TodayView: View {
                 description = todayPhoto.description
             }
         }
-    }
-    
-    private func savePhoto() {
-        guard let image = selectedImage else { return }
-        photoManager.addPhoto(image, description: description)
-        selectedImage = nil
     }
 }
 
