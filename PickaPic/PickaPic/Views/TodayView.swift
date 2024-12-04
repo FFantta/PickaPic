@@ -156,6 +156,7 @@ struct TodayView: View {
             }
             .preferredColorScheme(.light)
         }
+        .preferredColorScheme(.light)
         .onAppear {
             if let todayPhoto = photoManager.todayPhoto {
                 description = todayPhoto.description

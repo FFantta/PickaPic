@@ -114,6 +114,7 @@ struct HistoryView: View {
             }
             .preferredColorScheme(.light)
         }
+        .preferredColorScheme(.light)
     }
     
     private func monthYearString(from date: Date) -> String {
