@@ -112,6 +112,7 @@ struct HistoryView: View {
                 selectedPhoto = nil
                 selectedCell = nil
             }
+            .preferredColorScheme(.light)
         }
     }
     

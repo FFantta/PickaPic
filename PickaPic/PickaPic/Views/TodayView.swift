@@ -154,6 +154,7 @@ struct TodayView: View {
                 ImagePicker(image: $selectedImage, sourceType: .photoLibrary)
                     .edgesIgnoringSafeArea(.all)
             }
+            .preferredColorScheme(.light)
         }
         .onAppear {
             if let todayPhoto = photoManager.todayPhoto {

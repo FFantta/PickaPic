@@ -19,7 +19,6 @@ struct ContentView: View {
                             .resizable()
                             .scaledToFit()
                             .frame(width: 10, height: 10)
-                        // Text("今日")
                     }
                 }
                 .tag(0)
@@ -31,11 +30,11 @@ struct ContentView: View {
                             .resizable()
                             .scaledToFit()
                             .frame(width: 10, height: 10)
-                        // Text("记录")
                     }
                 }
                 .tag(1)
         }
+        .preferredColorScheme(.light)
     }
 }
 

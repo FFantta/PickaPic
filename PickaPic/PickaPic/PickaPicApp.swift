@@ -18,12 +18,16 @@ struct PickaPicApp: App {
                 windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: .portrait))
             }
         }
+        
+        // 强制使用浅色模式
+        UIWindow.appearance().overrideUserInterfaceStyle = .light
     }
     
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environmentObject(photoManager)
+                .preferredColorScheme(.light)
         }
     }
 }
