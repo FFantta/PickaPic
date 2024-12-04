@@ -273,7 +273,7 @@ struct PhotoDetailOverlay: View {
     
     var body: some View {
         ZStack {
-            Color.white
+            Color(red: 255/255, green: 242/255, blue: 223/255)
                 .ignoresSafeArea()
             
             VStack {
