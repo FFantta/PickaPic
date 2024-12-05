@@ -403,13 +403,13 @@ struct PhotoDetailOverlay: View {
                         
                         // 描述和日期
                         VStack(spacing: 16) {
-                            if !currentPhoto.description.isEmpty {
-                                Text(currentPhoto.description)
-                                    .font(.body)
-                                    .foregroundColor(.primary)
-                                    .multilineTextAlignment(.center)
-                                    .padding(.horizontal)
-                            }
+                            Text(currentPhoto.description.prefix(50))
+                                .font(.body)
+                                .foregroundColor(.primary)
+                                .multilineTextAlignment(.center)
+                                .frame(maxWidth: .infinity, minHeight: 60) // 固定高度
+                                .lineLimit(3) // 限制最多三行
+                                .padding(.horizontal)
                             
                             Text(currentPhoto.date.formatted(date: .complete, time: .shortened))
                                 .font(.caption)
