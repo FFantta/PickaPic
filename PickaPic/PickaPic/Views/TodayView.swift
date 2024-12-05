@@ -6,6 +6,7 @@ struct TodayView: View {
     @State private var showCamera = false
     @State private var selectedImage: UIImage?
     @State private var description = ""
+    @State private var isOverLimit = false
     @FocusState private var isTextFieldFocused: Bool
     @State private var isKeyboardVisible = false
     @State private var keyboardHeight: CGFloat = 0
@@ -59,12 +60,21 @@ struct TodayView: View {
                     
                     // 描述输入区域
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("今日状态")
-                            .font(.subheadline)
-                            .fontWeight(.bold)
-                            .foregroundColor(.black)
-                            .padding(.leading)
-                            .padding(.bottom, 6)
+                        HStack {
+                            Text("今日状态")
+                                .font(.subheadline)
+                                .fontWeight(.bold)
+                                .foregroundColor(.black)
+                            Spacer()
+                            if isKeyboardVisible {
+                                Text("\(description.count)/50")
+                                    .font(.caption)
+                                    .foregroundColor(description.count > 50 ? .red : .gray)
+                            }
+                        }
+                        .padding(.leading)
+                        .padding(.trailing)
+                        .padding(.bottom, 6)
                         
                         TextField("写下此刻的想法...", text: $description)
                             .padding()
@@ -73,6 +83,11 @@ struct TodayView: View {
                             .foregroundColor(.black)
                             .focused($isTextFieldFocused)
                             .submitLabel(.done)
+                            .onChange(of: description) { newValue in
+                                if newValue.count > 50 {
+                                    description = String(newValue.prefix(50))
+                                }
+                            }
                             .onSubmit {
                                 isTextFieldFocused = false
                                 if let todayPhoto = photoManager.todayPhoto {
