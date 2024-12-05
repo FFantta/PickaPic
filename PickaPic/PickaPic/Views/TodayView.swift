@@ -39,15 +39,17 @@ struct TodayView: View {
                         .cornerRadius(15)
                     }
                 }
-                .padding(.top, 10)
+                .padding(.top, 25) // 修改这里,添加负的顶部padding来向上移动
                 
                 // 描述输入区域
                 VStack(alignment: .leading, spacing: 8) {
                     Text("今日状态")
                         .font(.subheadline)
                         .fontWeight(.bold)
-                        .foregroundColor(Color(red: 100/255, green: 90/255, blue: 230/255))
+                        .foregroundColor(.black)
+                        // .foregroundColor(Color(red: 100/255, green: 90/255, blue: 230/255))
                         .padding(.leading)
+                        .padding(.bottom, 8)
                     
                     TextField("写下此刻的想法...", text: $description)
                         .padding()
@@ -66,7 +68,7 @@ struct TodayView: View {
                         }
                 }
                 .padding(.horizontal)
-                .padding(.bottom, -25) // 添加负的底部padding来减少间距
+                .padding(.bottom, -30) // 添加负的底部padding来减少间距
                 
                 // 按钮区域
                 VStack(spacing: 15) {
