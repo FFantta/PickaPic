@@ -16,7 +16,6 @@ struct ImagePicker: UIViewControllerRepresentable {
         
         func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
             if let image = info[.originalImage] as? UIImage {
-                // 处理图片方向
                 let fixedImage = image.fixOrientation()
                 parent.image = fixedImage
             }
@@ -65,7 +64,6 @@ struct ImagePicker: UIViewControllerRepresentable {
     }
 }
 
-// 添加 UIImage 扩展来处理图片方向
 extension UIImage {
     func fixOrientation() -> UIImage {
         if imageOrientation == .up { return self }
