@@ -10,7 +10,7 @@ struct TodayView: View {
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 25) {
+            VStack(spacing: 20) {
                 // 照片显示区域
                 ZStack {
                     // 白色背景卡片
@@ -39,7 +39,7 @@ struct TodayView: View {
                         .cornerRadius(15)
                     }
                 }
-                .padding(.top, 20)
+                .padding(.top, 10)
                 
                 // 描述输入区域
                 VStack(alignment: .leading, spacing: 8) {
@@ -76,46 +76,29 @@ struct TodayView: View {
                                 showCamera = true
                             }
                         }) {
-                            HStack {
-                                Image(systemName: "camera.fill")
-                                    .font(.headline)
-                                Text(photoManager.hasTodayPhoto ? "重新拍照" : "拍照")
-                                    .font(.headline)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 15)
-                            .background(Color.blue.opacity(0.1))
-                            .foregroundColor(.blue)
-                            .cornerRadius(15)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 15)
-                                    .stroke(Color.blue.opacity(0.3), lineWidth: 1)
-                            )
+                            Image("photo_4") // 使用素材中的photo图片
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 125, height: 125) // 设置尺寸为200x200
                         }
                         
                         // 相册按钮
                         Button(action: { showImagePicker = true }) {
-                            HStack {
-                                Image(systemName: "photo.fill")
-                                    .font(.headline)
-                                Text(photoManager.hasTodayPhoto ? "重新选择" : "相册")
-                                    .font(.headline)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 15)
-                            .background(Color.purple.opacity(0.1))
-                            .foregroundColor(.purple)
-                            .cornerRadius(15)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 15)
-                                    .stroke(Color.purple.opacity(0.3), lineWidth: 1)
-                            )
+                            Image("rephoto_4") // 使用自定义图片
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 125, height: 125) // 设置图片尺寸
                         }
+                        .frame(width: UIScreen.main.bounds.width * 0.4)
+                        .padding(.vertical, -25)
+                        // .background(Color.purple.opacity(0.1))
+                        // .foregroundColor(.purple)
+                        // .cornerRadius(15)
                     }
                     .padding(.horizontal)
                 }
                 
-                Spacer() // 添加 Spacer 来填充剩余空间
+                Spacer()
             }
             .background(Color(red: 255/255, green: 242/255, blue: 223/255))
             .onTapGesture {
