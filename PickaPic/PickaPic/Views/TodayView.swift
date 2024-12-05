@@ -84,7 +84,9 @@ struct TodayView: View {
                         }
                         
                         // 相册按钮
-                        Button(action: { showImagePicker = true }) {
+                        Button(action: { 
+                            showImagePicker = true 
+                        }) {
                             Image(photoManager.todayPhoto == nil ? "upload_4" : "reupload_4")
                                 .resizable()
                                 .scaledToFit()
@@ -116,8 +118,8 @@ struct TodayView: View {
                 ImagePicker(image: $selectedImage, sourceType: .photoLibrary)
                     .edgesIgnoringSafeArea(.all)
                     .onDisappear {
-                        if let image = selectedImage {
-                            photoManager.addPhoto(image, description: description)
+                        if selectedImage != nil {
+                            // 可以在这里添加其他需要的逻辑，比如更新UI等
                         }
                     }
             }
