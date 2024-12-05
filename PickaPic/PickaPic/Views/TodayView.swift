@@ -66,6 +66,7 @@ struct TodayView: View {
                         }
                 }
                 .padding(.horizontal)
+                .padding(.bottom, -25) // 添加负的底部padding来减少间距
                 
                 // 按钮区域
                 VStack(spacing: 15) {
@@ -79,7 +80,7 @@ struct TodayView: View {
                             Image("photo_4") // 使用素材中的photo图片
                                 .resizable()
                                 .scaledToFit()
-                                .frame(width: 125, height: 125) // 设置尺寸为200x200
+                                .frame(width: 155, height: 155) // 设置尺寸为200x200
                         }
                         
                         // 相册按钮
@@ -87,13 +88,10 @@ struct TodayView: View {
                             Image("rephoto_4") // 使用自定义图片
                                 .resizable()
                                 .scaledToFit()
-                                .frame(width: 125, height: 125) // 设置图片尺寸
+                                .frame(width: 155, height: 155) // 设置图片尺寸
                         }
                         .frame(width: UIScreen.main.bounds.width * 0.4)
                         .padding(.vertical, -25)
-                        // .background(Color.purple.opacity(0.1))
-                        // .foregroundColor(.purple)
-                        // .cornerRadius(15)
                     }
                     .padding(.horizontal)
                 }
