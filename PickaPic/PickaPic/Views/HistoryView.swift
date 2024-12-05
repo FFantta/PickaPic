@@ -94,19 +94,14 @@ struct HistoryView: View {
                     }
                 }
             }
-            .navigationTitle("时光记录")
+            .navigationTitle("Click à Crac")
             .navigationBarTitleDisplayMode(.inline)
-            // .toolbar {
-            //     ToolbarItem(placement: .navigationBarTrailing) {
-            //         Button(action: exportCurrentMonthPhotos) {
-            //             Image("share")
-            //                 .resizable()
-            //                 .scaledToFit()
-            //                 .frame(width: 100, height: 100)
-            //                 .padding(.trailing, -20)
-            //         }
-            //     }
-            // }
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text("Click à Crac")
+                        .font(.system(size: 20, weight: .bold))
+                }
+            }
             .sheet(isPresented: $isExporting) {
                 ShareSheet(items: prepareExportItems())
             }
@@ -336,7 +331,7 @@ struct PhotoDetailOverlay: View {
                             DragGesture()
                                 .onChanged { value in
                                     offset = value.translation
-                                    // ��据滑动方向预加载下一张照片
+                                    // 据滑动方向预加载下一张照片
                                     if value.translation.width > 0 {
                                         nextPhoto = getPreviousPhoto()
                                     } else if value.translation.width < 0 {
