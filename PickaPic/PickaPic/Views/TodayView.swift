@@ -79,18 +79,18 @@ struct TodayView: View {
                                 showCamera = true
                             }
                         }) {
-                            Image("photo_4") // 使用素材中的photo图片
+                            Image(photoManager.todayPhoto == nil ? "photo_4" : "rephoto_4") // 根据是否有今日照片选择图片
                                 .resizable()
                                 .scaledToFit()
-                                .frame(width: 155, height: 155) // 设置尺寸为200x200
+                                .frame(width: 155, height: 155)
                         }
                         
                         // 相册按钮
                         Button(action: { showImagePicker = true }) {
-                            Image("rephoto_4") // 使用自定义图片
+                            Image(photoManager.todayPhoto == nil ? "upload_4" : "reupload_4")
                                 .resizable()
                                 .scaledToFit()
-                                .frame(width: 155, height: 155) // 设置图片尺寸
+                                .frame(width: 155, height: 155)
                         }
                         .frame(width: UIScreen.main.bounds.width * 0.4)
                         .padding(.vertical, -25)
