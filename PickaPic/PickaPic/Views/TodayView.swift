@@ -121,7 +121,7 @@ struct TodayView: View {
                         .edgesIgnoringSafeArea(.all)
                         .onDisappear {
                             if let image = selectedImage {
-                                photoManager.addPhoto(image, description: description)
+                                photoManager.addPhoto(image, description: description, saveToAlbum: true)
                             }
                         }
                 }
@@ -129,8 +129,8 @@ struct TodayView: View {
                     ImagePicker(image: $selectedImage, sourceType: .photoLibrary)
                         .edgesIgnoringSafeArea(.all)
                         .onDisappear {
-                            if selectedImage != nil {
-                                // 可以在这里添加其他需要的逻辑，比如更新UI等
+                            if let image = selectedImage {
+                                photoManager.addPhoto(image, description: description, saveToAlbum: false)
                             }
                         }
                 }

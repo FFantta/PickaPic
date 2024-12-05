@@ -53,7 +53,7 @@ class PhotoManager: ObservableObject {
         }
     }
     
-    func addPhoto(_ image: UIImage, description: String) {
+    func addPhoto(_ image: UIImage, description: String, saveToAlbum: Bool = true) {
         // 如果今天已经有照片，先删除它
         if let existingPhoto = todayPhoto {
             dailyPhotos.removeAll { $0.id == existingPhoto.id }
@@ -67,16 +67,17 @@ class PhotoManager: ObservableObject {
             date: Date()
         )
         
-        // 保存到相册
-        saveImageToAlbum(image) { success in
-            if success {
-                print("照片已保存到相册")
-            } else {
-                print("保存照片到相册失败")
+        // 只在需要时保存到相册
+        if saveToAlbum {
+            saveImageToAlbum(image) { success in
+                if success {
+                    print("照片已保存到相册")
+                } else {
+                    print("保存照片到相册失败")
+                }
             }
         }
         
-        // 保存到应用内
         dailyPhotos.append(newPhoto)
         savePhotos()
     }
