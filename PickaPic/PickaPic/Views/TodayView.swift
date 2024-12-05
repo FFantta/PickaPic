@@ -7,6 +7,8 @@ struct TodayView: View {
     @State private var selectedImage: UIImage?
     @State private var description = ""
     @FocusState private var isTextFieldFocused: Bool
+    @State private var isKeyboardVisible = false
+    @State private var keyboardHeight: CGFloat = 0
     
     var body: some View {
         NavigationView {
@@ -39,7 +41,7 @@ struct TodayView: View {
                         .cornerRadius(15)
                     }
                 }
-                .padding(.top, 25) // 修改这里,添加负的顶部padding来向上移动
+                .padding(.top, isKeyboardVisible ? keyboardHeight * 0.3 : 25)
                 
                 // 描述输入区域
                 VStack(alignment: .leading, spacing: 8) {
@@ -77,7 +79,7 @@ struct TodayView: View {
                                 showCamera = true
                             }
                         }) {
-                            Image(photoManager.todayPhoto == nil ? "photo_4" : "rephoto_4") // 根据是否有今日照片选择图片
+                            Image(photoManager.todayPhoto == nil ? "photo_4" : "rephoto_4")
                                 .resizable()
                                 .scaledToFit()
                                 .frame(width: 155, height: 155)
@@ -97,14 +99,12 @@ struct TodayView: View {
                     }
                     .padding(.horizontal)
                 }
-                
-                Spacer()
             }
             .background(Color(red: 255/255, green: 242/255, blue: 223/255))
             .onTapGesture {
                 isTextFieldFocused = false
             }
-            .navigationTitle("Pick a Pic")
+            .navigationTitle(isKeyboardVisible ? "" : "Pick a Pic")
             .fullScreenCover(isPresented: $showCamera) {
                 ImagePicker(image: $selectedImage, sourceType: .camera)
                     .edgesIgnoringSafeArea(.all)
@@ -130,6 +130,16 @@ struct TodayView: View {
             if let todayPhoto = photoManager.todayPhoto {
                 description = todayPhoto.description
             }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { notification in
+            if let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect {
+                keyboardHeight = keyboardFrame.height
+                isKeyboardVisible = true
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+            keyboardHeight = 0
+            isKeyboardVisible = false
         }
     }
 }
