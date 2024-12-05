@@ -171,6 +171,23 @@ class PhotoManager: ObservableObject {
             calendar.isDate(photo.date, inSameDayAs: date)
         }
     }
+    
+    // 添加更新描述的方法
+    func updateDescription(for photo: DailyPhoto, with newDescription: String) {
+        if let index = dailyPhotos.firstIndex(where: { $0.id == photo.id }) {
+            // 创建新的 DailyPhoto 实例，因为 DailyPhoto 是结构体
+            let updatedPhoto = DailyPhoto(
+                id: photo.id,
+                image: photo.image,
+                description: newDescription,
+                date: photo.date
+            )
+            // 更新数组中的照片
+            dailyPhotos[index] = updatedPhoto
+            // 保存更新后的数据
+            savePhotos()
+        }
+    }
 }
 
 // 用于保存到 JSON 的照片索引结构

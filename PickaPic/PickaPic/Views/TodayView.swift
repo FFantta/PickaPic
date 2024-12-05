@@ -58,13 +58,11 @@ struct TodayView: View {
                         .foregroundColor(.black)
                         .focused($isTextFieldFocused)
                         .submitLabel(.done)
-                        .onChange(of: description) { newValue in
-                            if let image = selectedImage ?? photoManager.todayPhoto?.image {
-                                photoManager.addPhoto(image, description: newValue)
-                            }
-                        }
                         .onSubmit {
                             isTextFieldFocused = false
+                            if let todayPhoto = photoManager.todayPhoto {
+                                photoManager.updateDescription(for: todayPhoto, with: description)
+                            }
                         }
                 }
                 .padding(.horizontal)

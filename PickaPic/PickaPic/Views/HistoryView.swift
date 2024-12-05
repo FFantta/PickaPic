@@ -31,7 +31,7 @@ struct HistoryView: View {
                         Text(monthYearString(from: selectedDate))
                             .font(.system(size: 22, weight: .bold))
                             .frame(width: 150)
-                            .animation(.none)
+                            .animation(.none, value: selectedDate)
                         
                         Button(action: nextMonth) {
                             Image(systemName: "chevron.right")
@@ -336,7 +336,7 @@ struct PhotoDetailOverlay: View {
                             DragGesture()
                                 .onChanged { value in
                                     offset = value.translation
-                                    // 根据滑动方向预加载下一张照片
+                                    // ��据滑动方向预加载下一张照片
                                     if value.translation.width > 0 {
                                         nextPhoto = getPreviousPhoto()
                                     } else if value.translation.width < 0 {
