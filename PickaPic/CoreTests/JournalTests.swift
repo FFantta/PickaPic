@@ -1,0 +1,42 @@
+import XCTest
+@testable import PickaPicCore
+
+final class JournalTests: XCTestCase {
+    var directory: URL!
+    var repo: JournalRepository!
+    let day = Day(rawValue: "2026-05-20")!
+    override func setUp() async throws { directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString); repo = JournalRepository(root: directory); _ = try await repo.open() }
+    override func tearDown() async throws { try? FileManager.default.removeItem(at: directory) }
+    func add(_ day: Day? = nil, text: String = "hello", replace: Bool = false) async throws -> JournalSnapshot { try await repo.save(day: day ?? self.day, caption: text, image: Data([1,2,3]), thumbnail: Data([4,5]), replace: replace) }
+    func testCalendarDaysAreValidated() throws {
+        XCTAssertNil(Day(rawValue: "2026-02-29")); XCTAssertNotNil(Day(rawValue: "2024-02-29")); XCTAssertNil(Day(rawValue: "2026-2-03")); XCTAssertNil(Day(rawValue: "2026-13-01")); XCTAssertNil(Day(rawValue: "2026-00-00"))
+        XCTAssertThrowsError(try JSONDecoder().decode(Day.self, from: Data("\"2026-02-31\"".utf8)))
+    }
+    func testDaySurvivesTravelRoundTrip() throws { let data = try JSONEncoder().encode(day); XCTAssertEqual(try JSONDecoder().decode(Day.self, from: data).rawValue, "2026-05-20") }
+    func testSavedPageSurvivesReopen() async throws { _ = try await add(); let other = JournalRepository(root: directory); let (value, _) = try await other.open(); XCTAssertEqual(value.entries.first?.caption, "hello") }
+    func testOneLivePagePerDay() async throws { _ = try await add(); do { _ = try await add(); XCTFail("Expected conflict") } catch JournalError.dayConflict {} }
+    func testReplacementMovesOldPageToTrash() async throws { _ = try await add(); let result = try await add(text: "new", replace: true); XCTAssertEqual(result.entries.filter { !$0.isDeleted }.count, 1); XCTAssertEqual(result.entries.filter(\.isDeleted).count, 1) }
+    func testCaptionOnlyEditKeepsImageBytes() async throws { let first = try await add(); let entry = first.entries[0]; let result = try await repo.save(day: day, caption: "edited", image: nil, thumbnail: nil, editingID: entry.id); XCTAssertEqual(result.entries[0].imageName, entry.imageName); XCTAssertEqual(try Data(contentsOf: directory.appendingPathComponent("Images/" + entry.imageName)), Data([1,2,3])) }
+    func testFailedFutureSaveKeepsPriorState() async throws { _ = try await add(); do { _ = try await repo.save(day: Day(rawValue: "2099-01-01")!, caption: "bad", image: Data([1]), thumbnail: Data([1])); XCTFail() } catch JournalError.futureDate {}; let (value, _) = try await repo.open(); XCTAssertEqual(value.entries.count, 1) }
+    func testRestoreConflictRequiresConfirmation() async throws { let first = try await add(); _ = try await add(text: "new", replace: true); do { _ = try await repo.setDeleted(first.entries[0].id, deleted: false); XCTFail() } catch JournalError.dayConflict {}; let result = try await repo.setDeleted(first.entries[0].id, deleted: false, replace: true); XCTAssertEqual(result.entries.filter { !$0.isDeleted }.first?.caption, "hello") }
+    func testBackupRoundTripAndRepeatedImport() async throws { _ = try await add(); let backup = try await repo.makeBackup(); defer { try? FileManager.default.removeItem(at: backup) }; let destination = directory.appendingPathComponent("Other"); let other = JournalRepository(root: destination); _ = try await other.open(); let one = try await other.restore(backup, policy: .keepExisting); let two = try await other.restore(backup, policy: .replaceExisting); XCTAssertEqual(one.entries.count, two.entries.count); XCTAssertEqual(one.entries[0].caption, "hello") }
+    func testImportConflictPolicies() async throws { _ = try await add(); let backup = try await repo.makeBackup(); defer { try? FileManager.default.removeItem(at: backup) }; let other = JournalRepository(root: directory.appendingPathComponent("Other")); _ = try await other.open(); _ = try await other.save(day: day, caption: "keep", image: Data([8]), thumbnail: Data([8])); let kept = try await other.restore(backup, policy: .keepExisting); XCTAssertEqual(kept.entries.filter { !$0.isDeleted }.first?.caption, "keep"); let replaced = try await other.restore(backup, policy: .replaceExisting); XCTAssertEqual(replaced.entries.filter { !$0.isDeleted }.first?.caption, "hello") }
+    func testDamagedBackupDoesNotOverwrite() async throws { let first = try await add(); let backup = try await repo.makeBackup(); defer { try? FileManager.default.removeItem(at: backup) }; try FileManager.default.removeItem(at: backup.appendingPathComponent("Images/" + first.entries[0].imageName)); do { _ = try await repo.restore(backup, policy: .replaceExisting); XCTFail() } catch {}; let (value, _) = try await repo.open(); XCTAssertEqual(value.entries, first.entries) }
+    func testBackupDetectsChangedImageBytes() async throws { let first = try await add(); let backup = try await repo.makeBackup(); defer { try? FileManager.default.removeItem(at: backup) }; try Data([9]).write(to: backup.appendingPathComponent("Images/" + first.entries[0].imageName)); do { _ = try await repo.inspectBackup(backup); XCTFail("Expected checksum failure") } catch {} }
+    func testCorruptCurrentIndexRecoversPrevious() async throws { _ = try await add(); _ = try await add(Day(rawValue: "2026-05-21")!); try Data("broken".utf8).write(to: directory.appendingPathComponent("journal-v2.json")); let (recovered, notice) = try await repo.open(); XCTAssertNotNil(notice); XCTAssertEqual(recovered.entries.count, 1) }
+    func testPermanentDeletionCannotReturnThroughPreviousIndex() async throws { let value = try await add(); let e = value.entries[0]; _ = try await repo.setDeleted(e.id, deleted: true); _ = try await repo.purge(ids: [e.id]); XCTAssertFalse(FileManager.default.fileExists(atPath: directory.appendingPathComponent("Images/" + e.imageName).path)); let previous = try JSONDecoder().decode(JournalSnapshot.self, from: Data(contentsOf: directory.appendingPathComponent("journal-previous.json"))); XCTAssertTrue(previous.entries.isEmpty) }
+    func testLegacyMigrationDoesNotDeleteOriginals() async throws {
+        let root = directory.appendingPathComponent("Legacy"); try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true); let id = UUID(); let d = day.date
+        struct Legacy: Codable { let id: UUID; let description: String; let date: Date }
+        try JSONEncoder().encode([Legacy(id: id, description: "old", date: d)]).write(to: root.appendingPathComponent("photos.json")); try Data([1,2]).write(to: root.appendingPathComponent("\(id).jpg")); let legacy = JournalRepository(root: root); let (value, _) = try await legacy.open(); XCTAssertEqual(value.entries.first?.caption, "old"); XCTAssertTrue(FileManager.default.fileExists(atPath: root.appendingPathComponent("photos.json").path))
+    }
+    func testLocalRecoveryRestoresExactState() async throws {
+        _ = try await add(); let recovery = try await repo.makeBackup(recovery: true)
+        _ = try await add(Day(rawValue: "2026-05-21")!)
+        let restored = try await repo.restoreRecovery(recovery)
+        XCTAssertEqual(restored.entries.filter { !$0.isDeleted }.count, 1)
+        XCTAssertEqual(restored.entries[0].caption, "hello")
+        let copies = try await repo.recoveryBackups(); XCTAssertEqual(copies.count, 2)
+    }
+    func testCropOutsideRangeIsRejected() throws { var snapshot = JournalSnapshot(); snapshot.entries = [JournalEntry(id: UUID(), day: day, caption: "", imageName: "\(UUID()).jpg", thumbnailName: "bad", createdAt: Date(), updatedAt: Date(), crop: PhotoCrop(x: 2, y: 0.5, zoom: 1))]; XCTAssertThrowsError(try snapshot.validate()) }
+}

@@ -6,6 +6,22 @@
 	objectVersion = 77;
 	objects = {
 
+/* Local-only WidgetKit extension */
+FACE00000000000000000001 = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; path = PickaPicWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+FACE00000000000000000002 = {isa = PBXFileSystemSynchronizedRootGroup; path = Widget; sourceTree = "<group>"; };
+FACE00000000000000000004 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+FACE00000000000000000005 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+FACE00000000000000000006 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+FACE00000000000000000003 = {isa = PBXNativeTarget; buildConfigurationList = FACE00000000000000000007; buildPhases = (FACE00000000000000000004, FACE00000000000000000005, FACE00000000000000000006); buildRules = (); dependencies = (); fileSystemSynchronizedGroups = (FACE00000000000000000002); name = PickaPicWidget; packageProductDependencies = (); productName = PickaPicWidget; productReference = FACE00000000000000000001; productType = "com.apple.product-type.app-extension"; };
+FACE0000000000000000000B = {isa = PBXBuildFile; fileRef = FACE00000000000000000001; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+FACE0000000000000000000A = {isa = PBXCopyFilesBuildPhase; buildActionMask = 2147483647; dstPath = ""; dstSubfolderSpec = 13; files = (FACE0000000000000000000B); name = "Embed App Extensions"; runOnlyForDeploymentPostprocessing = 0; };
+FACE0000000000000000000C = {isa = PBXContainerItemProxy; containerPortal = 714CBA462CE8975400F31C8E; proxyType = 1; remoteGlobalIDString = FACE00000000000000000003; remoteInfo = PickaPicWidget; };
+FACE0000000000000000000D = {isa = PBXTargetDependency; target = FACE00000000000000000003; targetProxy = FACE0000000000000000000C; };
+FACE00000000000000000007 = {isa = XCConfigurationList; buildConfigurations = (FACE00000000000000000008, FACE00000000000000000009); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+FACE00000000000000000008 = {isa = XCBuildConfiguration; buildSettings = {APPLICATION_EXTENSION_API_ONLY = YES; CODE_SIGN_STYLE = Automatic; CODE_SIGN_ENTITLEMENTS = "Config/Shared.entitlements"; DEVELOPMENT_TEAM = 7VKT2PKQJ5; CURRENT_PROJECT_VERSION = 2; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = "Config/Widget-Info.plist"; IPHONEOS_DEPLOYMENT_TARGET = 16.0; MARKETING_VERSION = 2.0; PRODUCT_BUNDLE_IDENTIFIER = ffantta.PickaPic.Widget; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SKIP_INSTALL = YES; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", "@executable_path/../../Frameworks"); }; name = Debug; };
+FACE00000000000000000009 = {isa = XCBuildConfiguration; buildSettings = {APPLICATION_EXTENSION_API_ONLY = YES; CODE_SIGN_STYLE = Automatic; CODE_SIGN_ENTITLEMENTS = "Config/Shared.entitlements"; DEVELOPMENT_TEAM = 7VKT2PKQJ5; CURRENT_PROJECT_VERSION = 2; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = "Config/Widget-Info.plist"; IPHONEOS_DEPLOYMENT_TARGET = 16.0; MARKETING_VERSION = 2.0; PRODUCT_BUNDLE_IDENTIFIER = ffantta.PickaPic.Widget; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SKIP_INSTALL = YES; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", "@executable_path/../../Frameworks"); }; name = Release; };
+
+
 /* Begin PBXFileReference section */
 		714CBA4E2CE8975400F31C8E /* PickaPic.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PickaPic.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -33,6 +49,7 @@
 			isa = PBXGroup;
 			children = (
 				714CBA502CE8975400F31C8E /* PickaPic */,
+				FACE00000000000000000002,
 				714CBA4F2CE8975400F31C8E /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,6 +58,7 @@
 			isa = PBXGroup;
 			children = (
 				714CBA4E2CE8975400F31C8E /* PickaPic.app */,
+				FACE00000000000000000001,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -55,10 +73,12 @@
 				714CBA4A2CE8975400F31C8E /* Sources */,
 				714CBA4B2CE8975400F31C8E /* Frameworks */,
 				714CBA4C2CE8975400F31C8E /* Resources */,
+				FACE0000000000000000000A,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				FACE0000000000000000000D,
 			);
 			fileSystemSynchronizedGroups = (
 				714CBA502CE8975400F31C8E /* PickaPic */,
@@ -89,6 +109,7 @@
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
+				"zh-Hans",
 				en,
 				Base,
 			);
@@ -100,6 +121,7 @@
 			projectRoot = "";
 			targets = (
 				714CBA4D2CE8975400F31C8E /* PickaPic */,
+				FACE00000000000000000003,
 			);
 		};
 /* End PBXProject section */
@@ -177,7 +199,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -234,7 +256,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
@@ -251,11 +273,13 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_ASSET_PATHS = "\"PickaPic/Preview Content\"";
 				DEVELOPMENT_TEAM = 7VKT2PKQJ5;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Config/App-Info.plist";
+				CODE_SIGN_ENTITLEMENTS = "Config/Shared.entitlements";
 				INFOPLIST_KEY_CFBundleDisplayName = PickaPic;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 				INFOPLIST_KEY_NSCameraUsageDescription = "需要访问相机以拍摄照片";
@@ -270,7 +294,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = ffantta.PickaPic;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -286,11 +310,13 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_ASSET_PATHS = "\"PickaPic/Preview Content\"";
 				DEVELOPMENT_TEAM = 7VKT2PKQJ5;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Config/App-Info.plist";
+				CODE_SIGN_ENTITLEMENTS = "Config/Shared.entitlements";
 				INFOPLIST_KEY_CFBundleDisplayName = PickaPic;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 				INFOPLIST_KEY_NSCameraUsageDescription = "需要访问相机以拍摄照片";
@@ -305,7 +331,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = ffantta.PickaPic;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
