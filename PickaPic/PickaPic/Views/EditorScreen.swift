@@ -85,7 +85,8 @@ struct EditorScreen: View {
     private func openCamera() async {
         guard UIImagePickerController.isSourceTypeAvailable(.camera) else { message = L("当前设备没有可用相机，请从相册选图。", "No camera is available. Choose a photo instead."); return }
         let status = AVCaptureDevice.authorizationStatus(for: .video)
-        let allowed = status == .authorized || (status == .notDetermined ? await AVCaptureDevice.requestAccess(for: .video) : false)
+        let allowed: Bool
+        if status == .notDetermined { allowed = await AVCaptureDevice.requestAccess(for: .video) } else { allowed = status == .authorized }
         if allowed { showCamera = true } else { message = L("相机权限未开启。可在系统设置中允许，或从相册选图。", "Camera access is off. Enable it in Settings, or choose a photo.") }
     }
 }

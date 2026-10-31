@@ -45,13 +45,14 @@ struct ContentView: View {
                 .alert(L("数据恢复提示", "Recovery notice"), isPresented: Binding(get: { store.recoveryNotice != nil }, set: { if !$0 { store.recoveryNotice = nil } })) { Button(L("知道了", "OK")) { store.recoveryNotice = nil } } message: { Text(store.recoveryNotice ?? "") }
         }
         .id(language)
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification)) { _ in store.refreshClock() }
         .onOpenURL { url in
             guard url.scheme == "pickapic" else { return }
-            tab = .today
+            tab = url.host == "book" ? .book : (url.host == "calendar" ? .calendar : (url.host == "memories" ? .memories : .today))
             if url.host == "today" { editor = EditorRoute(day: Day(Date()), entry: store.today) }
         }
         .onChange(of: scenePhase) { phase in
-            if phase == .active { Task { await ReminderService.reschedule(completedToday: store.today != nil) } }
+            if phase == .active { store.refreshClock() }
         }
     }
     private var dock: some View {

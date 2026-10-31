@@ -2,7 +2,6 @@ name: iOS and local storage
 on:
   push:
     branches: [main, 'feature/**']
-  pull_request:
   workflow_dispatch:
 permissions:
   contents: read
@@ -17,4 +16,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build app and widget without signing
-        run: xcodebuild -project PickaPic/PickaPic.xcodeproj -scheme PickaPic -sdk iphonesimulator -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+        run: xcodebuild -project PickaPic/PickaPic.xcodeproj -scheme PickaPic -sdk iphonesimulator -configuration Debug -destination 'generic/platform=iOS Simulator' -derivedDataPath /tmp/PickaPicBuild CODE_SIGNING_ALLOWED=NO build
+      - name: Capture native simulator screens
+        run: |
+          DEVICE=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(x["udid"] for a in d["devices"].values() for x in a if "iPhone" in x["name"]))')
+          xcrun simctl boot "$DEVICE"
+          xcrun simctl bootstatus "$DEVICE" -b
+          xcrun simctl status_bar "$DEVICE" override --time '9:41' --batteryState charged --batteryLevel 100
+          xcrun simctl install "$DEVICE" /tmp/PickaPicBuild/Build/Products/Debug-iphonesimulator/PickaPic.app
+          xcrun simctl launch "$DEVICE" ffantta.PickaPic -AppleLanguages '(zh-Hans)' -AppleLocale zh_CN -onboarding.complete YES
+          mkdir -p screenshots
+          sleep 3
+          xcrun simctl io "$DEVICE" screenshot screenshots/today.png
+          xcrun simctl openurl "$DEVICE" pickapic://calendar
+          sleep 2
+          xcrun simctl io "$DEVICE" screenshot screenshots/calendar.png
+          xcrun simctl openurl "$DEVICE" pickapic://book
+          sleep 2
+          xcrun simctl io "$DEVICE" screenshot screenshots/book.png
+          sips -Z 1100 screenshots/today.png -s format jpeg -s formatOptions 80 --out /tmp/today.jpg
+          echo 'PICKAPIC_SCREEN_BEGIN'
+          base64 -i /tmp/today.jpg
+          echo 'PICKAPIC_SCREEN_END'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-ios-screens
+          path: screenshots/

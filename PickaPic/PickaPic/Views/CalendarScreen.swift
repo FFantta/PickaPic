@@ -58,11 +58,13 @@ struct EntryDetailScreen: View {
     @EnvironmentObject private var store: JournalStore
     @Environment(\.dismiss) private var dismiss
     let entryID: UUID
+    @State private var currentID: UUID
+    init(entryID: UUID) { self.entryID = entryID; _currentID = State(initialValue: entryID) }
     @State private var edit = false
     @State private var confirmDelete = false
     @State private var share: SharePayload?
     @State private var message: String?
-    private var entry: JournalEntry? { store.live.first { $0.id == entryID } }
+    private var entry: JournalEntry? { store.live.first { $0.id == currentID } }
     var body: some View {
         Group {
             if let e = entry {
@@ -70,6 +72,8 @@ struct EntryDetailScreen: View {
                     VStack(alignment: .leading, spacing: 24) {
                         Eyebrow(text: e.day.rawValue)
                         PhotoTile(url: store.url(for: e), maxPixel: 2400, fit: true).frame(height: 390).clipShape(RoundedRectangle(cornerRadius: 24))
+                            .gesture(DragGesture(minimumDistance: 30).onEnded { value in if abs(value.translation.width) > abs(value.translation.height) { move(value.translation.width < 0 ? 1 : -1) } })
+                        HStack { Button { move(-1) } label: { Label(L("前一页", "Previous"), systemImage: "chevron.left") }.disabled(adjacent(-1) == nil); Spacer(); Button { move(1) } label: { Label(L("后一页", "Next"), systemImage: "chevron.right") }.disabled(adjacent(1) == nil) }.font(.caption.weight(.semibold))
                         Text(e.caption.isEmpty ? L("无题的一天。", "An untitled day.") : e.caption).font(.title2).textSelection(.enabled)
                         Text(e.day.date.formatted(date: .complete, time: .omitted)).font(.caption).foregroundStyle(Paper.muted)
                         PrimaryButton(title: L("编辑这一页", "Edit this page"), symbol: "pencil") { edit = true }
@@ -85,6 +89,12 @@ struct EntryDetailScreen: View {
             .sheet(item: $share) { ShareSheet(urls: $0.urls) }
             .alert(L("提示", "Notice"), isPresented: Binding(get: { message != nil }, set: { if !$0 { message = nil } })) { Button(L("好", "OK")) { message = nil } } message: { Text(message ?? "") }
     }
+    private func adjacent(_ offset: Int) -> UUID? {
+        let pages = store.live.sorted { $0.day < $1.day }
+        guard let index = pages.firstIndex(where: { $0.id == currentID }), pages.indices.contains(index + offset) else { return nil }
+        return pages[index + offset].id
+    }
+    private func move(_ offset: Int) { if let next = adjacent(offset) { withAnimation(.easeInOut(duration: 0.2)) { currentID = next } } }
 }
 struct MemoriesScreen: View {
     @EnvironmentObject private var store: JournalStore

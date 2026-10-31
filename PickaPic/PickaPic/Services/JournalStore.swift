@@ -35,6 +35,11 @@ final class JournalStore: ObservableObject {
         } catch { self.error = error.localizedDescription }
         loading = false
     }
+    func refreshClock() {
+        entries = Array(entries)
+        WidgetBridge.update(count: live.count, today: today != nil)
+        Task { await ReminderService.reschedule(completedToday: today != nil) }
+    }
     func apply(_ snapshot: JournalSnapshot) {
         entries = snapshot.entries
         WidgetBridge.update(count: live.count, today: today != nil)

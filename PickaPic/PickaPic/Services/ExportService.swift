@@ -11,9 +11,10 @@ struct ShareSheet: UIViewControllerRepresentable {
 extension UTType {
     static let pickapicBackup = UTType(exportedAs: "com.pickapic.journal-backup", conformingTo: .package)
 }
-struct BackupDocument: FileDocument {
+// Immutable wrapper handed to the system exporter; never mutated after initialization.
+struct BackupDocument: FileDocument, @unchecked Sendable {
     static var readableContentTypes: [UTType] { [.pickapicBackup] }
-    var wrapper: FileWrapper
+    let wrapper: FileWrapper
     init(url: URL) throws { wrapper = try FileWrapper(url: url, options: []) }
     init(configuration: ReadConfiguration) throws { wrapper = configuration.file }
     func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper { wrapper }
