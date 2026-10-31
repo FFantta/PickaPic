@@ -300,7 +300,7 @@ actor JournalRepository {
     }
     func restoreRecovery(_ folder: URL) throws -> JournalSnapshot {
         let allowed = try recoveryBackups()
-        guard allowed.contains(folder) else { throw JournalError.invalidBackup }
+        guard allowed.contains(where: { $0.resolvingSymlinksInPath().standardizedFileURL.path == folder.resolvingSymlinksInPath().standardizedFileURL.path }) else { throw JournalError.invalidBackup }
         let recovered = try validatedBackup(folder)
         _ = try makeBackup(recovery: true)
         var next = recovered
@@ -313,7 +313,7 @@ actor JournalRepository {
         return try commit(next)
     }
     func deleteRecovery(_ folder: URL) throws {
-        guard try recoveryBackups().contains(folder) else { throw JournalError.invalidBackup }
+        guard try recoveryBackups().contains(where: { $0.resolvingSymlinksInPath().standardizedFileURL.path == folder.resolvingSymlinksInPath().standardizedFileURL.path }) else { throw JournalError.invalidBackup }
         try fm.removeItem(at: folder)
     }
     // Streaming FNV-1a detects accidental corruption, not authenticity of an untrusted backup.

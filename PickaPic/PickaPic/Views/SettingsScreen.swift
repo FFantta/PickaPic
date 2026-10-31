@@ -23,33 +23,11 @@ struct SettingsScreen: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section {
-                    HStack { VStack(alignment: .leading, spacing: 8) { Text("pickapic").font(.title.bold()); Text(L("一本只属于你的生活书。", "A little book of your life.")).font(.subheadline).foregroundStyle(Paper.muted) }; Spacer(); Flower().fill(Paper.lime).frame(width: 54, height: 54) }.padding(.vertical, 10)
-                    Picker(L("语言", "Language"), selection: $language) { Text(L("跟随系统", "System")).tag("system"); Text("简体中文").tag("zh"); Text("English").tag("en") }
-                }
-                Section(L("数据与安全", "Your journal")) {
-                    LabeledContent(L("已记录", "Pages"), value: String(store.live.count))
-                    LabeledContent(L("照片存储", "Photo storage"), value: ByteCountFormatter.string(fromByteCount: store.storageBytes, countStyle: .file))
-                    Button { Task { await createBackup() } } label: { Label(L("导出完整备份", "Export full backup"), systemImage: "externaldrive.badge.plus") }.disabled(working)
-                    Button { importing = true } label: { Label(L("从备份恢复", "Restore from backup"), systemImage: "arrow.counterclockwise") }.disabled(working)
-                    NavigationLink { RecoveryScreen() } label: { Label(L("本机恢复副本", "Local recovery copies"), systemImage: "clock.arrow.circlepath") }
-                    NavigationLink { TrashScreen() } label: { Label(L("回收站", "Recently Deleted") + " (\(store.trash.count))", systemImage: "trash") }
-                    Button { Task { await store.cleanCache(); message = L("已清理未引用的图片。用于恢复上一版本的文件会保留。", "Removed unused images. Files needed for index recovery are kept.") } } label: { Label(L("清理无用文件", "Clean unused files"), systemImage: "sparkle") }
-                } footer: { Text(L("卸载 App 可能删除本机日记。请定期将完整备份存到你选择的位置。备份包含私人内容，PDF 不能用于完整恢复。", "Deleting this app may delete local journals. Save a full backup somewhere safe. Backups contain private content; PDFs cannot fully restore a journal.")) }
-                Section(L("温柔的提醒", "A gentle reminder")) {
-                    Toggle(L("每日提醒", "Daily reminder"), isOn: Binding(get: { reminders }, set: { value in Task { await setReminders(value) } }))
-                    if reminders { DatePicker(L("提醒时间", "Time"), selection: $reminderTime, displayedComponents: .hourAndMinute).onChange(of: reminderTime) { value in hour = Calendar.current.component(.hour, from: value); minute = Calendar.current.component(.minute, from: value); Task { await ReminderService.reschedule(completedToday: store.today != nil) } } }
-                    Text(L("按设备当前时区提醒。系统可能延迟通知；每次打开会补充未来 14 天的提醒。", "Uses your device's current time zone. Delivery is controlled by iOS; opening the app renews the next 14 days.")).font(.caption).foregroundStyle(Paper.muted)
-                }
-                Section(L("桌面入口", "On your Home Screen")) {
-                    Label(L("今日快捷小组件", "Today's page widget"), systemImage: "square.grid.2x2")
-                    Text(L("长按主屏幕，添加 PickaPic 小组件。默认只展示记录数量，不显示私人照片。", "Long-press your Home Screen and add PickaPic. The widget shows your page count, never private photos.")).font(.caption).foregroundStyle(Paper.muted)
-                }
-                Section(L("关于与支持", "About & support")) {
-                    Button(L("隐私与数据说明", "Privacy & data")) { privacy = true }
-                    Link(destination: URL(string: "mailto:junrun.chen@outlook.com?subject=PickaPic%20feedback")!) { Label(L("联系开发者", "Contact the developer"), systemImage: "envelope") }
-                    LabeledContent(L("版本", "Version"), value: (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "2.0") + " · Local")
-                }
+                appearanceSection
+                journalSection
+                reminderSection
+                widgetSection
+                aboutSection
                 if working { ProgressView(L("正在处理，请稍候…", "Working…")) }
             }.scrollContentBackground(.hidden).paperScreen().navigationTitle(L("留给自己的空间", "A space of your own")).navigationBarTitleDisplayMode(.inline)
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button(L("完成", "Done")) { dismiss() } } }
@@ -70,6 +48,43 @@ struct SettingsScreen: View {
                 .sheet(isPresented: $privacy) { PrivacyScreen() }
                 .alert(L("提示", "Notice"), isPresented: Binding(get: { message != nil }, set: { if !$0 { message = nil } })) { Button(L("好", "OK")) { message = nil } } message: { Text(message ?? "") }
         }
+    }
+    private var appearanceSection: some View {
+                Section {
+                    HStack { VStack(alignment: .leading, spacing: 8) { Text("pickapic").font(.title.bold()); Text(L("一本只属于你的生活书。", "A little book of your life.")).font(.subheadline).foregroundStyle(Paper.muted) }; Spacer(); Flower().fill(Paper.lime).frame(width: 54, height: 54) }.padding(.vertical, 10)
+                    Picker(L("语言", "Language"), selection: $language) { Text(L("跟随系统", "System")).tag("system"); Text("简体中文").tag("zh"); Text("English").tag("en") }
+                }
+    }
+    private var journalSection: some View {
+                Section {
+                    LabeledContent(L("已记录", "Pages"), value: String(store.live.count))
+                    LabeledContent(L("照片存储", "Photo storage"), value: ByteCountFormatter.string(fromByteCount: store.storageBytes, countStyle: .file))
+                    Button { Task { await createBackup() } } label: { Label(L("导出完整备份", "Export full backup"), systemImage: "externaldrive.badge.plus") }.disabled(working)
+                    Button { importing = true } label: { Label(L("从备份恢复", "Restore from backup"), systemImage: "arrow.counterclockwise") }.disabled(working)
+                    NavigationLink { RecoveryScreen() } label: { Label(L("本机恢复副本", "Local recovery copies"), systemImage: "clock.arrow.circlepath") }
+                    NavigationLink { TrashScreen() } label: { Label(L("回收站", "Recently Deleted") + " (\(store.trash.count))", systemImage: "trash") }
+                    Button { Task { await store.cleanCache(); message = L("已清理未引用的图片。用于恢复上一版本的文件会保留。", "Removed unused images. Files needed for index recovery are kept.") } } label: { Label(L("清理无用文件", "Clean unused files"), systemImage: "sparkle") }
+                } header: { Text(L("数据与安全", "Your journal")) } footer: { Text(L("卸载 App 可能删除本机日记。请定期将完整备份存到你选择的位置。备份包含私人内容，PDF 不能用于完整恢复。", "Deleting this app may delete local journals. Save a full backup somewhere safe. Backups contain private content; PDFs cannot fully restore a journal.")) }
+    }
+    private var reminderSection: some View {
+                Section(L("温柔的提醒", "A gentle reminder")) {
+                    Toggle(L("每日提醒", "Daily reminder"), isOn: Binding(get: { reminders }, set: { value in Task { await setReminders(value) } }))
+                    if reminders { DatePicker(L("提醒时间", "Time"), selection: $reminderTime, displayedComponents: .hourAndMinute).onChange(of: reminderTime) { value in hour = Calendar.current.component(.hour, from: value); minute = Calendar.current.component(.minute, from: value); Task { await ReminderService.reschedule(completedToday: store.today != nil) } } }
+                    Text(L("按设备当前时区提醒。系统可能延迟通知；每次打开会补充未来 14 天的提醒。", "Uses your device's current time zone. Delivery is controlled by iOS; opening the app renews the next 14 days.")).font(.caption).foregroundStyle(Paper.muted)
+                }
+    }
+    private var widgetSection: some View {
+                Section(L("桌面入口", "On your Home Screen")) {
+                    Label(L("今日快捷小组件", "Today's page widget"), systemImage: "square.grid.2x2")
+                    Text(L("长按主屏幕，添加 PickaPic 小组件。默认只展示记录数量，不显示私人照片。", "Long-press your Home Screen and add PickaPic. The widget shows your page count, never private photos.")).font(.caption).foregroundStyle(Paper.muted)
+                }
+    }
+    private var aboutSection: some View {
+                Section(L("关于与支持", "About & support")) {
+                    Button(L("隐私与数据说明", "Privacy & data")) { privacy = true }
+                    Link(destination: URL(string: "mailto:junrun.chen@outlook.com?subject=PickaPic%20feedback")!) { Label(L("联系开发者", "Contact the developer"), systemImage: "envelope") }
+                    LabeledContent(L("版本", "Version"), value: (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "2.0") + " · Local")
+                }
     }
     private var importTitle: String {
         guard let summary = importSummary else { return "" }
