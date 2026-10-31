@@ -130,6 +130,7 @@ enum ExportService {
             let cellHeight = cell + captionHeight + (showDates ? 32 : 0)
             let height = 230 + CGFloat(rows) * (cellHeight + gap) + 90
             let format = UIGraphicsImageRendererFormat(); format.scale = 1
+            var missing = false
             let rendered = UIGraphicsImageRenderer(size: CGSize(width: width, height: height), format: format).image { c in
                 UIColor(Paper.background).setFill(); c.cgContext.fill(CGRect(x: 0, y: 0, width: width, height: height))
                 drawText("PICKAPIC / LITTLE MOMENTS", rect: CGRect(x: margin, y: 46, width: 1280, height: 40), font: .monospacedSystemFont(ofSize: 20, weight: .bold))
@@ -137,11 +138,12 @@ enum ExportService {
                 for (i, entry) in chosen.enumerated() {
                     let slot = monthly ? padding + calendar.component(.day, from: entry.day.date) - 1 : i
                     let x = margin + CGFloat(slot % columns) * (cell + gap), y = 230 + CGFloat(slot / columns) * (cellHeight + gap)
-                    if let image = load(entry, root: root, pixels: monthly ? 500 : 1200) { drawImage(image, in: CGRect(x: x, y: y, width: cell, height: cell), fill: true) }
+                    if let image = load(entry, root: root, pixels: monthly ? 500 : 1200) { drawImage(image, in: CGRect(x: x, y: y, width: cell, height: cell), fill: true) } else { missing = true }
                     if showDates { drawText(String(entry.day.rawValue.suffix(5)), rect: CGRect(x: x, y: y + cell + 5, width: cell, height: 28), font: .monospacedSystemFont(ofSize: 18, weight: .medium)) }
                     if !monthly && showCaption { drawText(entry.caption, rect: CGRect(x: x, y: y + cell + (showDates ? 38 : 6), width: cell, height: 90), font: .systemFont(ofSize: 20), lines: 3) }
                 }
             }
+            if missing { throw JournalError.missingImage }
             // Rendering produces fresh pixels and intentionally does not copy EXIF/location metadata.
             let url = try folder().appendingPathComponent("PickaPic-\(monthly ? "month" : "week")-\(UUID().uuidString).jpg")
             guard let data = rendered.jpegData(compressionQuality: 0.95) else { throw JournalError.missingImage }; try data.write(to: url, options: .atomic); return url

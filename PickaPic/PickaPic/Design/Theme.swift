@@ -50,6 +50,7 @@ struct Flower: Shape {
 }
 struct BookArtwork: View {
     var year: Int; var title: String = "THE LITTLE\nTHINGS"; var count: Int = 0
+    var coverURL: URL?
     var body: some View {
         ZStack(alignment: .leading) {
             RoundedRectangle(cornerRadius: 7).fill(Paper.ink).offset(x: 7, y: 7)
@@ -59,7 +60,8 @@ struct BookArtwork: View {
                 HStack { Text("PICKAPIC").tracking(2); Spacer(); Text("VOL. \(String(year).suffix(2))") }.font(.system(size: 9, weight: .bold, design: .monospaced))
                 Spacer()
                 Text(title).font(.system(size: 31, weight: .black, design: .rounded)).tracking(-1.1).lineLimit(4).minimumScaleFactor(0.6)
-                HStack { Flower().fill(Paper.lime).frame(width: 72, height: 72).overlay(Image(systemName: "sun.max").font(.title2)); Spacer() }
+                if let coverURL { PhotoTile(url: coverURL, maxPixel: 900, fit: true).frame(height: 110).clipShape(RoundedRectangle(cornerRadius: 3)) }
+                else { HStack { Flower().fill(Paper.lime).frame(width: 72, height: 72).overlay(Image(systemName: "sun.max").font(.title2)); Spacer() } }
                 Spacer()
                 HStack { Text(String(year)).font(.system(size: 34, weight: .light, design: .serif)); Spacer(); Text(L("\(count) 个日子", "\(count) DAYS")).font(.system(size: 10, weight: .medium, design: .monospaced)) }
             }.padding(24).padding(.leading, 9)
@@ -69,17 +71,18 @@ struct BookArtwork: View {
 struct PhotoTile: View {
     let url: URL; var maxPixel = 900; var fit = false
     @State private var image: UIImage?
+    @State private var failed = false
     var body: some View {
         GeometryReader { geo in
             Group {
                 if let image { Image(uiImage: image).resizable().aspectRatio(contentMode: fit ? .fit : .fill) }
-                else { ZStack { Paper.sage.opacity(0.35); Image(systemName: "photo").foregroundStyle(Paper.muted) } }
+                else { ZStack { Paper.sage.opacity(0.35); VStack(spacing: 8) { Image(systemName: failed ? "exclamationmark.triangle" : "photo"); if failed && fit { Text(L("照片文件不可用，请从备份恢复。", "Photo unavailable. Restore from a backup.")).font(.caption).multilineTextAlignment(.center).padding(12) } }.foregroundStyle(Paper.muted) } }
             }.frame(width: geo.size.width, height: geo.size.height).clipped()
         }
         .task(id: url) {
-            image = nil
+            image = nil; failed = false
             let loaded = await Task.detached(priority: .userInitiated) { ImageProcessor.load(url, maxPixel: maxPixel) }.value
-            if !Task.isCancelled { image = loaded }
+            if !Task.isCancelled { image = loaded; failed = loaded == nil }
         }
     }
 }

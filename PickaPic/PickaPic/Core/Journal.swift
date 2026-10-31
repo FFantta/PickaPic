@@ -293,6 +293,29 @@ actor JournalRepository {
         }
         return try commit(next)
     }
+    func recoveryBackups() throws -> [URL] {
+        let folder = root.appendingPathComponent("Recovery", isDirectory: true)
+        guard fm.fileExists(atPath: folder.path) else { return [] }
+        return try fm.contentsOfDirectory(at: folder, includingPropertiesForKeys: [.creationDateKey]).filter { $0.pathExtension == "pickapic" }.sorted { ((try? $0.resourceValues(forKeys: [.creationDateKey]).creationDate) ?? .distantPast) > ((try? $1.resourceValues(forKeys: [.creationDateKey]).creationDate) ?? .distantPast) }
+    }
+    func restoreRecovery(_ folder: URL) throws -> JournalSnapshot {
+        let allowed = try recoveryBackups()
+        guard allowed.contains(folder) else { throw JournalError.invalidBackup }
+        let recovered = try validatedBackup(folder)
+        _ = try makeBackup(recovery: true)
+        var next = recovered
+        for i in next.entries.indices {
+            let e = next.entries[i]; let name = "\(UUID()).jpg"
+            try fm.copyItem(at: folder.appendingPathComponent("Images/" + e.imageName), to: images.appendingPathComponent(name))
+            try fm.copyItem(at: folder.appendingPathComponent("Images/" + e.thumbnailName), to: images.appendingPathComponent("thumb-" + name))
+            next.entries[i].imageName = name; next.entries[i].thumbnailName = "thumb-" + name
+        }
+        return try commit(next)
+    }
+    func deleteRecovery(_ folder: URL) throws {
+        guard try recoveryBackups().contains(folder) else { throw JournalError.invalidBackup }
+        try fm.removeItem(at: folder)
+    }
     // Streaming FNV-1a detects accidental corruption, not authenticity of an untrusted backup.
     private func checksum(_ url: URL) throws -> String {
         let handle = try FileHandle(forReadingFrom: url); defer { try? handle.close() }

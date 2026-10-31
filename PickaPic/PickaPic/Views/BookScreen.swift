@@ -14,6 +14,7 @@ struct BookScreen: View {
     @State private var preview: SharePayload?
     @State private var showSharing = false
     @State private var error: String?
+    @State private var lowResolutionCount = 0
     private var pages: [JournalEntry] { store.live.filter { !$0.excludedFromBook && $0.day.year == year && (!useRange || ($0.day >= Day(start) && $0.day <= Day(end))) }.sorted { $0.day < $1.day } }
     private var years: [Int] { Array(Set(store.live.map { $0.day.year } + [Calendar.current.component(.year, from: Date())])).sorted(by: >) }
     var body: some View {
@@ -21,7 +22,7 @@ struct BookScreen: View {
             PageHeading(kicker: "A LIFE IN PAGES", title: L("这是你的，\n生活作品集。", "A life,\nwell collected."))
             HStack { Text(L("年度", "Year")).font(.headline); Spacer(); Picker(L("年度", "Year"), selection: $year) { ForEach(years, id: \.self) { Text(String($0)).tag($0) } }.pickerStyle(.menu) }
             ZStack(alignment: .bottomTrailing) {
-                BookArtwork(year: year, title: title, count: pages.count).frame(maxWidth: 280).rotationEffect(.degrees(-5)).padding(.vertical, 24).frame(maxWidth: .infinity)
+                BookArtwork(year: year, title: title, count: pages.count, coverURL: pages.first(where: { $0.id.uuidString == cover }).map { store.url(for: $0) }).frame(maxWidth: 280).rotationEffect(.degrees(-5)).padding(.vertical, 24).frame(maxWidth: .infinity)
                 Flower().fill(Paper.lime).frame(width: 86, height: 86).overlay(Text(L("慢慢\n成书", "IN THE\nMAKING")).font(.system(size: 11, weight: .bold, design: .monospaced)).multilineTextAlignment(.center)).rotationEffect(.degrees(12))
             }
             TextField(L("书名", "Book title"), text: $title, axis: .vertical).font(.title2.weight(.bold)).lineLimit(2...3).onChange(of: title) { value in title = String(value.prefix(50)) }
@@ -35,6 +36,7 @@ struct BookScreen: View {
                 PrimaryButton(title: L("翻开我的书", "Open my book"), symbol: "book") { generate() }.disabled(pages.isEmpty)
             }
             Text(L("\(pages.count) 张照片会收录。每个日子独占一页，月份自成章节。", "\(pages.count) photos included. A page for each day, a chapter for each month.")).font(.subheadline).foregroundStyle(Paper.muted)
+            if lowResolutionCount > 0 { Label(L("\(lowResolutionCount) 张照片尺寸偏小，打印时可能不够清晰。", "\(lowResolutionCount) photos are small and may look soft in print."), systemImage: "exclamationmark.circle").font(.caption).foregroundStyle(Paper.muted) }
             Button { showSharing = true } label: { Label(L("制作每周或月历分享图", "Make a week or month collage"), systemImage: "square.and.arrow.up") }.font(.headline)
             if !pages.isEmpty {
                 Divider(); Eyebrow(text: L("收录预览", "IN THIS BOOK"))
@@ -43,6 +45,10 @@ struct BookScreen: View {
                 }
             }
             Text(L("在记录详情中可选择不收录；这不会删除日记。PDF 是阅读版，请以印刷商规范进一步预检后再印刷。", "Leave out a page from its details without deleting it. The PDF is a reading edition; check a printer's specifications before printing.")).font(.caption).foregroundStyle(Paper.muted)
+        }
+        .task(id: pages.map { $0.imageName }.joined()) {
+            let urls = pages.map { store.url(for: $0) }
+            lowResolutionCount = await Task.detached { urls.filter { ImageProcessor.isSmallForPrint($0) }.count }.value
         }
         .sheet(item: $preview) { payload in BookPreviewScreen(url: payload.urls[0]) }
         .sheet(isPresented: $showSharing) { CollageScreen() }

@@ -10,6 +10,7 @@ struct EditorScreen: View {
     @State private var date: Date
     @State private var caption: String
     @State private var image: UIImage?
+    @State private var photoChanged = false
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var showCamera = false
     @State private var showCrop = false
@@ -51,13 +52,14 @@ struct EditorScreen: View {
                     }
                     HStack { Text(L("几句想说的话", "A few words")).font(.headline); Spacer(); Text("\(caption.count)/50").font(.caption.monospaced()).foregroundStyle(Paper.muted) }
                     TextField(L("这一刻，想记住什么？", "What would you like to remember?"), text: $caption, axis: .vertical).lineLimit(3...6).padding(18).background(.white, in: RoundedRectangle(cornerRadius: 18)).onChange(of: caption) { value in caption = String(value.prefix(50)); dirty = true }
-                    if image != nil { Toggle(L("另存一份到系统相册", "Also save a copy to Photos"), isOn: $saveToPhotos).font(.subheadline) }
+                    if photoChanged { Toggle(L("另存一份到系统相册", "Also save a copy to Photos"), isOn: $saveToPhotos).font(.subheadline) }
                     Text(L("照片和文字保存在本机。裁切只影响书页，完整照片仍保留。", "Saved on your device. Book cropping never removes your full photo.")).font(.caption).foregroundStyle(Paper.muted)
                     PrimaryButton(title: saving ? L("正在保存…", "Saving…") : L("保存这一页", "Keep this page"), symbol: "checkmark") { Task { await save(replace: false) } }.disabled(saving || loading || (image == nil && entry == nil))
                 }.padding(24)
             }.paperScreen().navigationTitle(L("留住一个瞬间", "Keep a moment")).navigationBarTitleDisplayMode(.inline)
                 .toolbar { ToolbarItem(placement: .cancellationAction) { Button(L("取消", "Cancel")) { if dirty { discard = true } else { dismiss() } }.disabled(saving) } }
                 .interactiveDismissDisabled(dirty || saving)
+                .onChange(of: crop) { _ in dirty = true }
                 .onChange(of: date) { _ in dirty = true }
                 .onChange(of: selectedPhoto) { item in
                     guard let item else { return }
@@ -65,11 +67,11 @@ struct EditorScreen: View {
                         loading = true; defer { loading = false }
                         do {
                             guard let data = try await item.loadTransferable(type: Data.self), let selected = UIImage(data: data) else { throw JournalError.missingImage }
-                            image = selected; crop = nil; dirty = true; suggestedDate = ImageProcessor.captureDate(data)
+                            image = selected; photoChanged = true; crop = nil; dirty = true; suggestedDate = ImageProcessor.captureDate(data)
                         } catch { message = error.localizedDescription }
                     }
                 }
-                .fullScreenCover(isPresented: $showCamera) { CameraPicker { result in if let result { image = result; crop = nil; dirty = true }; showCamera = false }.ignoresSafeArea() }
+                .fullScreenCover(isPresented: $showCamera) { CameraPicker { result in if let result { image = result; photoChanged = true; crop = nil; dirty = true }; showCamera = false }.ignoresSafeArea() }
                 .sheet(isPresented: $showCrop) { if let image { CropScreen(image: image, crop: $crop) } }
                 .alert(L("请检查", "Please check"), isPresented: Binding(get: { message != nil }, set: { if !$0 { message = nil } })) { Button(L("好", "OK")) { message = nil } } message: { Text(message ?? "") }
                 .confirmationDialog(L("这个日期已有一页。替换后旧记录进入回收站。", "This day already has a page. Replacing moves the old page to Recently Deleted."), isPresented: $conflict, titleVisibility: .visible) { Button(L("替换旧记录", "Replace existing page"), role: .destructive) { Task { await save(replace: true) } } }
@@ -78,7 +80,7 @@ struct EditorScreen: View {
     }
     private func save(replace: Bool) async {
         saving = true; defer { saving = false }
-        do { try await store.save(day: Day(date), caption: caption, image: image, editing: entry, replace: replace, saveToPhotos: saveToPhotos, crop: crop); dirty = false; dismiss() }
+        do { try await store.save(day: Day(date), caption: caption, image: photoChanged ? image : nil, editing: entry, replace: replace, saveToPhotos: saveToPhotos, crop: crop); dirty = false; dismiss() }
         catch JournalError.dayConflict { conflict = true }
         catch { message = error.localizedDescription }
     }

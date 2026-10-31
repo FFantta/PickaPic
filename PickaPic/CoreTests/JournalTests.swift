@@ -30,5 +30,13 @@ final class JournalTests: XCTestCase {
         struct Legacy: Codable { let id: UUID; let description: String; let date: Date }
         try JSONEncoder().encode([Legacy(id: id, description: "old", date: d)]).write(to: root.appendingPathComponent("photos.json")); try Data([1,2]).write(to: root.appendingPathComponent("\(id).jpg")); let legacy = JournalRepository(root: root); let (value, _) = try await legacy.open(); XCTAssertEqual(value.entries.first?.caption, "old"); XCTAssertTrue(FileManager.default.fileExists(atPath: root.appendingPathComponent("photos.json").path))
     }
+    func testLocalRecoveryRestoresExactState() async throws {
+        _ = try await add(); let recovery = try await repo.makeBackup(recovery: true)
+        _ = try await add(Day(rawValue: "2026-05-21")!)
+        let restored = try await repo.restoreRecovery(recovery)
+        XCTAssertEqual(restored.entries.filter { !$0.isDeleted }.count, 1)
+        XCTAssertEqual(restored.entries[0].caption, "hello")
+        let copies = try await repo.recoveryBackups(); XCTAssertEqual(copies.count, 2)
+    }
     func testCropOutsideRangeIsRejected() throws { var snapshot = JournalSnapshot(); snapshot.entries = [JournalEntry(id: UUID(), day: day, caption: "", imageName: "\(UUID()).jpg", thumbnailName: "bad", createdAt: Date(), updatedAt: Date(), crop: PhotoCrop(x: 2, y: 0.5, zoom: 1))]; XCTAssertThrowsError(try snapshot.validate()) }
 }

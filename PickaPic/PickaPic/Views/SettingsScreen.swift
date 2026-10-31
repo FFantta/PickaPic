@@ -32,6 +32,7 @@ struct SettingsScreen: View {
                     LabeledContent(L("照片存储", "Photo storage"), value: ByteCountFormatter.string(fromByteCount: store.storageBytes, countStyle: .file))
                     Button { Task { await createBackup() } } label: { Label(L("导出完整备份", "Export full backup"), systemImage: "externaldrive.badge.plus") }.disabled(working)
                     Button { importing = true } label: { Label(L("从备份恢复", "Restore from backup"), systemImage: "arrow.counterclockwise") }.disabled(working)
+                    NavigationLink { RecoveryScreen() } label: { Label(L("本机恢复副本", "Local recovery copies"), systemImage: "clock.arrow.circlepath") }
                     NavigationLink { TrashScreen() } label: { Label(L("回收站", "Recently Deleted") + " (\(store.trash.count))", systemImage: "trash") }
                     Button { Task { await store.cleanCache(); message = L("已清理未引用的图片。用于恢复上一版本的文件会保留。", "Removed unused images. Files needed for index recovery are kept.") } } label: { Label(L("清理无用文件", "Clean unused files"), systemImage: "sparkle") }
                 } footer: { Text(L("卸载 App 可能删除本机日记。请定期将完整备份存到你选择的位置。备份包含私人内容，PDF 不能用于完整恢复。", "Deleting this app may delete local journals. Save a full backup somewhere safe. Backups contain private content; PDFs cannot fully restore a journal.")) }
@@ -139,4 +140,33 @@ struct PrivacyScreen: View {
             }.padding(24) }.paperScreen().navigationTitle(L("隐私与数据", "Privacy & data")).navigationBarTitleDisplayMode(.inline).toolbar { ToolbarItem(placement: .confirmationAction) { Button(L("完成", "Done")) { dismiss() } } }
         }
     }
+}
+
+struct RecoveryScreen: View {
+    @EnvironmentObject private var store: JournalStore
+    @State private var files: [URL] = []
+    @State private var selected: URL?
+    @State private var deleting: URL?
+    @State private var message: String?
+    @State private var busy = false
+    var body: some View {
+        List {
+            Section { Text(L("导入备份前会自动保留完整副本。恢复将把日记还原到当时状态，并先保存当前状态。副本同样包含私人内容，可单独删除。", "A full copy is kept before imports. Restoring returns the whole journal to that state and first saves the current state. These copies contain private content and can be deleted separately.")).font(.caption) }
+            ForEach(files, id: \.self) { file in
+                HStack {
+                    VStack(alignment: .leading, spacing: 6) { Text(creation(file).formatted(date: .abbreviated, time: .shortened)).font(.headline); Text(String(file.lastPathComponent.prefix(25))).font(.caption).foregroundStyle(Paper.muted) }
+                    Spacer()
+                    Menu { Button(L("还原到这份副本", "Restore this version")) { selected = file }; Button(L("删除副本", "Delete copy"), role: .destructive) { deleting = file } } label: { Image(systemName: "ellipsis.circle").frame(width: 44, height: 44) }.disabled(busy)
+                }
+            }
+            if files.isEmpty { Text(L("还没有恢复副本。", "No recovery copies yet.")) }
+            if busy { ProgressView() }
+        }.scrollContentBackground(.hidden).paperScreen().navigationTitle(L("本机恢复副本", "Local recovery copies")).navigationBarTitleDisplayMode(.inline)
+            .task { await refresh() }
+            .confirmationDialog(L("将还原整本日记。当前状态会另存为恢复副本。", "Restore the entire journal? The current state will be kept as another recovery copy."), isPresented: Binding(get: { selected != nil }, set: { if !$0 { selected = nil } }), titleVisibility: .visible) { Button(L("还原", "Restore"), role: .destructive) { if let file = selected { Task { busy = true; defer { busy = false }; do { store.apply(try await store.repository.restoreRecovery(file)); await refresh(); message = L("已还原。", "Journal restored.") } catch { message = error.localizedDescription } } }; selected = nil } }
+            .confirmationDialog(L("永久删除这份恢复副本？当前日记不会改变。", "Permanently delete this recovery copy? The current journal is unchanged."), isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }), titleVisibility: .visible) { Button(L("删除副本", "Delete copy"), role: .destructive) { if let file = deleting { Task { do { try await store.repository.deleteRecovery(file); await refresh() } catch { message = error.localizedDescription } } }; deleting = nil } }
+            .alert(L("提示", "Notice"), isPresented: Binding(get: { message != nil }, set: { if !$0 { message = nil } })) { Button(L("好", "OK")) { message = nil } } message: { Text(message ?? "") }
+    }
+    private func creation(_ url: URL) -> Date { (try? url.resourceValues(forKeys: [.creationDateKey]).creationDate) ?? Date() }
+    private func refresh() async { do { files = try await store.repository.recoveryBackups() } catch { message = error.localizedDescription } }
 }

@@ -109,6 +109,7 @@ FACE00000000000000000009 = {isa = XCBuildConfiguration; buildSettings = {APPLICA
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
+				"zh-Hans",
 				en,
 				Base,
 			);
